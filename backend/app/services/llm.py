@@ -1,41 +1,51 @@
-# from backend.test_openai import OpenAI
 from groq import Groq
 from app.config import settings
+from app.models.avatar import Message
 
-# client = OpenAI(api_key=settings.OPENAI_API_KEY)
-client = Groq(
-    api_key=settings.GROQ_API_KEY
-)
+# Initialize Groq client
+client = Groq(api_key=settings.GROQ_API_KEY)
 
-# def get_chat_response(message: str, system_prompt: str = None) -> str:
-#     if not system_prompt:
-#         system_prompt = "You are a helpful assistant."
+def get_chat_response(
+    message: str,
+    system_prompt: str,
+    conversation_history: list
+) -> str:
+    """
+    Get response from Groq with conversation history
 
-#     response = client.chat.completions.create(
-#         model="gpt-4o",
-#         messages=[
-#             {"role": "system", "content": system_prompt},
-#             {"role": "user", "content": message}
-#         ],
-#         max_tokens=500
-#     )
+    Args:
+        message: Current user message
+        system_prompt: Avatar personality/system instructions
+        conversation_history: List of previous Message objects
 
-#     return response.choices[0].message.content
+    Returns:
+        Response text from Groq
+    """
 
-def get_chat_response(message: str):
+    # Build messages for API call
+    messages = [
+        {"role": "system", "content": system_prompt}
+    ]
 
+    # Add conversation history
+    for msg in conversation_history:
+        messages.append({
+            "role": msg.role,
+            "content": msg.content
+        })
+
+    # Add current message
+    messages.append({
+        "role": "user",
+        "content": message
+    })
+
+    # Call Groq API
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful AI assistant."
-            },
-            {
-                "role": "user",
-                "content": message
-            }
-        ]
+        model="llama-3.3-70b-versatile",  # Free Groq model
+        messages=messages,
+        temperature=0.7,
+        max_tokens=500
     )
 
     return response.choices[0].message.content
